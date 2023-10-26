@@ -241,7 +241,11 @@ def plot_category_histograms(dataframe: pd.DataFrame, highlight: str = None, dis
 
     # plot and save
     plt.tight_layout()
-    histogram_output_path = os.path.join(PROJECT_DIR, 'eic/outputs/figures', f"histogram_plot_end.png")
+    if highlight:
+        histogram_output_path = os.path.join(PROJECT_DIR, 'eic/outputs/figures', f"histogram_plot_{highlight}_end.png")
+    else:
+        histogram_output_path = os.path.join(PROJECT_DIR, 'eic/outputs/figures', "histogram_plot_all_end.png")
+
     plt.savefig(histogram_output_path)
     plt.close()
 
@@ -279,10 +283,11 @@ def main():
     parser.add_argument('--highlight', type=str, help='Agency to highlight in the plots.')
     parser.add_argument('--data_path', type=str, default=f'{PROJECT_DIR}/eic/data/benchmarking_results.txt', help='Path to the data file.')
     parser.add_argument('--disclose', action='store_true', help='Whether to disclose the agency name in the plots.')
+    parser.add_argument('--all', action='store_true', help='Iterate over each agency, highlighting it.')
     args = parser.parse_args()
 
-    # assert disclose is only False when highlight is not None
-    if not args.disclose:
+    # assert disclose is only False when highlight is not None, unless --all is used
+    if not args.disclose and not args.all:
         assert args.highlight is not None, "Highlight must be None when disclose is False."
 
     # Load and preprocess data
@@ -292,16 +297,31 @@ def main():
     output_dir = f"{PROJECT_DIR}/eic/outputs/figures"
     os.makedirs(output_dir, exist_ok=True)
 
-    # Radar plot
-    rp = RadarPlot(df)
-    rp.plot(highlight=args.highlight, disclose=args.disclose)
+    agencies = df.columns[2:].tolist()
 
-    # Histogram plot
-    hp = HistogramPlot(df)
-    hp.plot(highlight=args.highlight, disclose=args.disclose)
+    if args.all:
+        for agency in agencies:
+            # Radar plot
+            rp = RadarPlot(df)
+            rp.plot(highlight=agency, disclose=False)
 
-    # category histogram plot
-    plot_category_histograms(df, highlight=args.highlight, disclose=args.disclose)
+            # Histogram plot
+            hp = HistogramPlot(df)
+            hp.plot(highlight=agency, disclose=False)
+
+            # category histogram plot
+            plot_category_histograms(df, highlight=agency, disclose=False)
+    else:
+        # Radar plot
+        rp = RadarPlot(df)
+        rp.plot(highlight=args.highlight, disclose=args.disclose)
+
+        # Histogram plot
+        hp = HistogramPlot(df)
+        hp.plot(highlight=args.highlight, disclose=args.disclose)
+
+        # category histogram plot
+        plot_category_histograms(df, highlight=args.highlight, disclose=args.disclose)
 
     # output table (not used)
     # generate_colored_table(df)
