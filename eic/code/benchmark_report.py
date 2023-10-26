@@ -290,6 +290,10 @@ def main():
     if not args.disclose and not args.all:
         assert args.highlight is not None, "Highlight must be None when disclose is False."
 
+    # log that the use of `all` will override other arguments
+    if args.all:
+        print("`all` argument used, overriding other arguments.")
+
     # Load and preprocess data
     df = preprocess_data(args.data_path)
 
