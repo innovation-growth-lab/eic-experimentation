@@ -42,7 +42,7 @@ class RadarPlot:
         angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
         angles += angles[:1]  # Close the loop
 
-        fig, ax = plt.subplots(figsize=(12, 10), subplot_kw=dict(polar=True))
+        _, ax = plt.subplots(figsize=(12, 10), subplot_kw=dict(polar=True))
 
         # Hide the default polar grid and tick labels
         ax.axis("off")
@@ -146,7 +146,7 @@ class HistogramPlot:
             sub_categories = sub_df["Sub-category"].values
             n_subcats = len(sub_categories)
 
-            fig, axs = plt.subplots(1, n_subcats, figsize=(20, 5), sharey=True)
+            _, axs = plt.subplots(1, n_subcats, figsize=(20, 5), sharey=True)
 
             for ax, sub_cat in zip(axs, sub_categories):
                 scores = sub_df[sub_df["Sub-category"] == sub_cat][
@@ -211,7 +211,7 @@ def generate_colored_table(df: pd.DataFrame):
     df = df.append(total_row, ignore_index=True)
 
     # Set up the figure and axes
-    fig, ax = plt.subplots(figsize=(10, 10))
+    _, ax = plt.subplots(figsize=(10, 10))
 
     # Remove the axes
     ax.axis("off")
@@ -269,7 +269,7 @@ def plot_category_histograms(
     }
 
     # Setting up the figure and subplots
-    fig, axs = plt.subplots(nrows=len(categories), figsize=(12, 15))
+    _, axs = plt.subplots(nrows=len(categories), figsize=(12, 15))
 
     for idx, cat in enumerate(categories):
         scores = summed_scores.loc[cat, agencies]
