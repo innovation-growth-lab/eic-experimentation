@@ -1,12 +1,12 @@
 """
-python eic/code/benchmark_report.py --highlight EIC
+python eic_benchmark_report_generator/code/benchmark_report.py --highlight EIC
 """
+import os
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import argparse
-import os
-from eic import PROJECT_DIR
+from eic_benchmark_report_generator import PROJECT_DIR
 
 
 class RadarPlot:
@@ -113,7 +113,7 @@ class RadarPlot:
         plt.tight_layout()
         radar_output_path = os.path.join(
             PROJECT_DIR,
-            "eic/outputs/figures",
+            "eic_benchmark_report_generator/outputs/figures",
             f"radar_plot_{'all' if not highlight else highlight}.png",
         )
         plt.savefig(radar_output_path)
@@ -194,7 +194,7 @@ class HistogramPlot:
             plt.tight_layout()
             histogram_output_path = os.path.join(
                 PROJECT_DIR,
-                "eic/outputs/figures",
+                "eic_benchmark_report_generator/outputs/figures",
                 f"histogram_plot_{'all' if not highlight else highlight}_{i}.png",
             )
             plt.savefig(histogram_output_path)
@@ -240,7 +240,11 @@ def generate_colored_table(df: pd.DataFrame):
         loc="center",
     )
 
-    output_path = os.path.join(PROJECT_DIR, "eic/outputs/figures", "colored_table.png")
+    output_path = os.path.join(
+        PROJECT_DIR,
+        "eic_benchmark_report_generator/outputs/figures",
+        "colored_table.png",
+    )
     plt.savefig(output_path)
     plt.close()
 
@@ -299,11 +303,15 @@ def plot_category_histograms(
     plt.tight_layout()
     if highlight:
         histogram_output_path = os.path.join(
-            PROJECT_DIR, "eic/outputs/figures", f"histogram_plot_{highlight}_end.png"
+            PROJECT_DIR,
+            "eic_benchmark_report_generator/outputs/figures",
+            f"histogram_plot_{highlight}_end.png",
         )
     else:
         histogram_output_path = os.path.join(
-            PROJECT_DIR, "eic/outputs/figures", "histogram_plot_all_end.png"
+            PROJECT_DIR,
+            "eeic_benchmark_report_generatoric/outputs/figures",
+            "histogram_plot_all_end.png",
         )
 
     plt.savefig(histogram_output_path)
@@ -351,7 +359,7 @@ def main():
     parser.add_argument(
         "--data_path",
         type=str,
-        default=f"{PROJECT_DIR}/eic/data/benchmarking_results.txt",
+        default=f"{PROJECT_DIR}/eic_benchmark_report_generator/data/benchmarking_results.txt",
         help="Path to the data file.",
     )
     parser.add_argument(
@@ -378,7 +386,7 @@ def main():
     df = preprocess_data(args.data_path)
 
     # Ensure output directory exists
-    output_dir = f"{PROJECT_DIR}/eic/outputs/figures"
+    output_dir = f"{PROJECT_DIR}/eic_benchmark_report_generator/outputs/figures"
     os.makedirs(output_dir, exist_ok=True)
 
     agencies = df.columns[2:].tolist()

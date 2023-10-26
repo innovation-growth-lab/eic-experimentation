@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-from eic import PROJECT_DIR
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -7,8 +6,8 @@ with open(f"requirements.txt", "r", encoding="utf-8") as fh:
     requirements = fh.read()
 
 setup(
-    name='eic',
-    version='0.0.0',
+    name='eic_benchmark_report_generator',
+    version='0.1.3',
     license='MIT',
     description='',
     long_description=long_description,
