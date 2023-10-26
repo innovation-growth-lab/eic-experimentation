@@ -20,18 +20,18 @@ class RadarPlot:
         """Get summed scores for each category for each agency."""
         return self.df.groupby('Category').sum(numeric_only=True)
 
-    def plot(self, highlight: str=None) -> None:
+    def plot(self, highlight: str = None, disclose: bool = False) -> None:
         """Generate the radar plot with an optional highlight for a specific agency."""
 
         # Define colors for each agency
         colors = {
-            "EIC": "#1f77b4",
-            "Innosuisse": "#ff7f0e",
-            "Innoviris": "#2ca02c",
-            "IUK": "#d62728",
-            "CDTI": "#9467bd",
-            "SIEA": "#8c564b",
-            "Wallonie": "#e377c2"
+            "EIC": "#092640",
+            "Innosuisse": "#1F5DAD",
+            "Innoviris": "#FF5836",
+            "IUK": "#FAB61B",
+            "CDTI": "#00B2A2",
+            "SIEA": "#ff7f0e",
+            "Wallonie": "#d62728"
         }
         
         sums = self._get_sums()
@@ -56,15 +56,15 @@ class RadarPlot:
             
             if highlight and agency == highlight:
                 alpha_val = 0.8
-                line_val = 4
-                marker_val = 6
+                line_val = 6
+                marker_val = 8
             else:
-                alpha_val = 0.25  # Decreased alpha for lines
-                line_val = 2
-                marker_val = 4
+                alpha_val = 0.4  # Decreased alpha for lines
+                line_val = 3
+                marker_val = 6
 
-            ax.plot(angles, values, color=colors[agency], linewidth=line_val, alpha=alpha_val, label=agency, marker='s', markersize=marker_val)
-            ax.fill(angles, values, color=colors[agency], alpha=0.1)  # Fixed alpha for fill
+            ax.plot(angles, values, color=colors[agency], linewidth=line_val, alpha=alpha_val, label=(agency if (disclose or agency == highlight) else ""), marker='s', markersize=marker_val)
+            ax.fill(angles, values, color=colors[agency], alpha=0.05)  # Fixed alpha for fill
 
         # Adjust the position of the x-axis labels to prevent overlap
         for label, angle in zip(labels, angles[:-1]):
@@ -104,16 +104,16 @@ class HistogramPlot:
 
         # Color definition
         self.colors = {
-            "EIC": "#1f77b4",
-            "Innosuisse": "#ff7f0e",
-            "Innoviris": "#2ca02c",
-            "IUK": "#d62728",
-            "CDTI": "#9467bd",
-            "SIEA": "#8c564b",
-            "Wallonie": "#e377c2"
+            "EIC": "#092640",
+            "Innosuisse": "#1F5DAD",
+            "Innoviris": "#FF5836",
+            "IUK": "#FAB61B",
+            "CDTI": "#00B2A2",
+            "SIEA": "#ff7f0e",
+            "Wallonie": "#d62728"
         }
 
-    def plot(self, highlight=None):
+    def plot(self, highlight: str = None, disclose: bool = False):
         """Generate the histogram plots with an optional highlight for a specific agency."""
         for i, cat in enumerate(self.categories):
             sub_df = self.df[self.df['Category'] == cat]
@@ -142,6 +142,12 @@ class HistogramPlot:
                 # Removing top and right spines
                 ax.spines['top'].set_visible(False)
                 ax.spines['right'].set_visible(False)
+
+                # Adjust the x-axis labels if disclose is True
+                if not disclose:
+                    ax.set_xticks([highlight if agency == highlight else '' for agency in self.agencies])
+                else:
+                    ax.set_xticks(self.agencies)
 
             # plot and save
             plt.tight_layout()
@@ -189,11 +195,11 @@ def generate_colored_table(df: pd.DataFrame):
     plt.close()
 
 
-def plot_category_histograms(dataframe: pd.DataFrame) -> None:
+def plot_category_histograms(dataframe: pd.DataFrame, highlight: str = None, disclose: bool = False) -> None:
     """Generate histograms for each category based on agency summed scores."""
     
     # Sum scores for each category for each agency
-    summed_scores = dataframe.groupby('Category').sum()
+    summed_scores = dataframe.groupby('Category').sum(numeric_only=True)
     
     # Categories and Agencies
     categories = summed_scores.index
@@ -201,13 +207,13 @@ def plot_category_histograms(dataframe: pd.DataFrame) -> None:
     
     # Color definition for each agency
     colors = {
-        "EIC": "#1f77b4",
-        "Innosuisse": "#ff7f0e",
-        "Innoviris": "#2ca02c",
-        "IUK": "#d62728",
-        "CDTI": "#9467bd",
-        "SIEA": "#8c564b",
-        "Wallonie": "#e377c2"
+        "EIC": "#092640",
+        "Innosuisse": "#1F5DAD",
+        "Innoviris": "#FF5836",
+        "IUK": "#FAB61B",
+        "CDTI": "#00B2A2",
+        "SIEA": "#ff7f0e",
+        "Wallonie": "#d62728"
     }
     
     # Setting up the figure and subplots
@@ -225,6 +231,13 @@ def plot_category_histograms(dataframe: pd.DataFrame) -> None:
         axs[idx].set_ylim(0, 9)  # Setting y limit to be slightly more than max score for aesthetics
         axs[idx].spines['top'].set_visible(False)
         axs[idx].spines['right'].set_visible(False)
+
+        # Adjust the x-axis labels if disclose is True
+        axs[idx].set_xticks(range(len(agencies)))
+        if disclose:
+            axs[idx].set_xticklabels(agencies)
+        else:
+            axs[idx].set_xticklabels([agency if agency == highlight else '' for agency in agencies])
 
     # plot and save
     plt.tight_layout()
@@ -265,7 +278,12 @@ def main():
     parser = argparse.ArgumentParser(description="Generate benchmarking plots.")
     parser.add_argument('--highlight', type=str, help='Agency to highlight in the plots.')
     parser.add_argument('--data_path', type=str, default=f'{PROJECT_DIR}/eic/data/benchmarking_results.txt', help='Path to the data file.')
+    parser.add_argument('--disclose', action='store_true', help='Whether to disclose the agency name in the plots.')
     args = parser.parse_args()
+
+    # assert disclose is only False when highlight is not None
+    if not args.disclose:
+        assert args.highlight is not None, "Highlight must be None when disclose is False."
 
     # Load and preprocess data
     df = preprocess_data(args.data_path)
@@ -276,17 +294,17 @@ def main():
 
     # Radar plot
     rp = RadarPlot(df)
-    rp.plot(highlight=args.highlight)
+    rp.plot(highlight=args.highlight, disclose=args.disclose)
 
     # Histogram plot
     hp = HistogramPlot(df)
-    hp.plot(highlight=args.highlight)
+    hp.plot(highlight=args.highlight, disclose=args.disclose)
 
     # category histogram plot
-    plot_category_histograms(df)
+    plot_category_histograms(df, highlight=args.highlight, disclose=args.disclose)
 
-    # output table
-    generate_colored_table(df)
+    # output table (not used)
+    # generate_colored_table(df)
 
 if __name__ == '__main__':
     main()
