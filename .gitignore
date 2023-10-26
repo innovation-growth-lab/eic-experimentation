@@ -1,2 +1,3 @@
 eic/data/*
 eic/outputs/*
+*.egg-info
