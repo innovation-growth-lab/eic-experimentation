@@ -255,7 +255,7 @@ def plot_category_histograms(
     """Generate histograms for each category based on agency summed scores."""
 
     # Sum scores for each category for each agency
-    summed_scores = dataframe.groupby("Category").sum(numeric_only=True)
+    summed_scores = dataframe.groupby("Category", sort=False).sum(numeric_only=True)
 
     # Categories and Agencies
     categories = summed_scores.index
@@ -305,13 +305,13 @@ def plot_category_histograms(
         histogram_output_path = os.path.join(
             PROJECT_DIR,
             "eic_benchmark_report_generator/outputs/figures",
-            f"histogram_plot_{highlight}_end.png",
+            f"histogram_plot_{highlight}_main.png",
         )
     else:
         histogram_output_path = os.path.join(
             PROJECT_DIR,
             "eeic_benchmark_report_generatoric/outputs/figures",
-            "histogram_plot_all_end.png",
+            "histogram_plot_all_main.png",
         )
 
     plt.savefig(histogram_output_path)
@@ -335,7 +335,7 @@ def preprocess_data(data_path: str) -> pd.DataFrame:
     ]
     new_row = orig_rows.sum(numeric_only=True)
     new_row["Sub-category"] = "Data Use"
-    new_row["Category"] = "Collection & Integration"
+    new_row["Category"] = "Data Collection & Integration"
     df = pd.concat(
         [df, new_row.to_frame().T.set_index(pd.Index([5]))], ignore_index=False
     ).sort_index()
