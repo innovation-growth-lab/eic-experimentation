@@ -41,9 +41,39 @@ class OaFlow(FlowSpec):
         import yaml
 
         if self.iso_code == "all":
-            with open("config/oa.yaml", "rt", encoding="utf-8") as f:
-                config = yaml.load(f.read(), Loader=yaml.FullLoader)
-            self.iso_codes = config["ISO_CODES"]
+            # [TODO] Figure out how to load the config file.
+            # with open("eic_case_studies/config/oa.yaml", "rt", encoding="utf-8") as f:
+            #     config = yaml.load(f.read(), Loader=yaml.FullLoader)
+            # self.iso_codes = config["COUNTRY_ISO"]
+            self.iso_codes = [
+                "BE",
+                "BG",
+                "CZ",
+                "DK",
+                "DE",
+                "EE",
+                "IE",
+                "EL",
+                "ES",
+                "FR",
+                "HR",
+                "IT",
+                "CY",
+                "LV",
+                "LT",
+                "LU",
+                "HU",
+                "MT",
+                "NL",
+                "AT",
+                "PL",
+                "PT",
+                "RO",
+                "SI",
+                "SK",
+                "FI",
+                "SE",
+            ]
         else:
             self.iso_codes = [self.iso_code]
         self.next(self.get_institutions, foreach="iso_codes")
@@ -75,7 +105,7 @@ class OaFlow(FlowSpec):
         Join the flows.
         """
         import pandas as pd
-        
+
         self.oa_institutions = pd.concat([input.oa_institutions for input in inputs])
         self.next(self.end)
 
