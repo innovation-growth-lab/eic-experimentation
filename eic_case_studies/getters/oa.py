@@ -15,6 +15,8 @@ import argparse
 import requests
 import pandas as pd
 
+from eic_case_studies import logger
+
 
 def get_cursor_url(iso_code: str) -> str:
     """Creates a cursor url for the OpenAlex API.
@@ -66,6 +68,12 @@ def get_oa_institutions(iso_code: str, timesleep: int = 0) -> pd.DataFrame:
     oa_inst = []
     generator = institutions_generator(iso_code)
     for institutions in generator:
+        logger.info(
+            "Retrieved %d institutions for %s. Total: %d.",
+            len(institutions),
+            iso_code,
+            len(oa_inst),
+        )
         sleep(timesleep)
         if not institutions:
             continue
