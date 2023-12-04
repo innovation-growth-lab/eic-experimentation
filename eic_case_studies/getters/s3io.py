@@ -5,6 +5,7 @@ Module for S3 input/output operations.
 
 from fnmatch import fnmatch
 from decimal import Decimal
+import io
 import json
 import pickle
 import gzip
@@ -51,6 +52,8 @@ class S3DataManager:
 
         if fnmatch(output_file_dir, "*.csv"):
             output_var.to_csv(f"s3://{self.bucket_name}/{output_file_dir}", index=False)
+        elif fnmatch(output_file_dir, "*.parquet"):
+            output_var.to_parquet(f"s3://{self.bucket_name}/{output_file_dir}", index=False)
         elif fnmatch(output_file_dir, "*.pkl") or fnmatch(output_file_dir, "*.pickle"):
             obj.put(Body=pickle.dumps(output_var))
         elif fnmatch(output_file_dir, "*.gz"):
@@ -104,6 +107,8 @@ class S3DataManager:
             return json.loads(file)
         elif fnmatch(file_name, "*.csv"):
             return pd.read_csv(f"s3://{self.bucket_name}/{file_name}")
+        elif fnmatch(file_name, "*.parquet"):
+            return pd.read_parquet(f"s3://{self.bucket_name}/{file_name}")
         elif fnmatch(file_name, "*.pkl") or fnmatch(file_name, "*.pickle"):
             file = obj.get()["Body"].read().decode()
             return pickle.loads(file)
