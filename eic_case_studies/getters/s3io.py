@@ -5,15 +5,13 @@ Module for S3 input/output operations.
 
 from fnmatch import fnmatch
 from decimal import Decimal
-import io
+import logging
 import json
 import pickle
 import gzip
 import boto3
 import numpy as np
 import pandas as pd
-
-from eic_case_studies import BUCKET_NAME, logger
 
 
 class S3DataManager:
@@ -23,7 +21,7 @@ class S3DataManager:
 
     def __init__(self):
         self.s3 = boto3.resource("s3")
-        self.bucket_name = BUCKET_NAME
+        self.bucket_name = "eic-case-studies"
 
     class CustomJE(json.JSONEncoder):
         """
@@ -63,7 +61,7 @@ class S3DataManager:
         else:
             obj.put(Body=json.dumps(output_var, cls=self.CustomJE))
 
-        logger.info("Saved to s3://%s/%s ...", self.bucket_name, output_file_dir)
+        logging.info("Saved to s3://%s/%s ...", self.bucket_name, output_file_dir)
 
     def load_s3_json(self, file_name):
         """
@@ -113,7 +111,7 @@ class S3DataManager:
             file = obj.get()["Body"].read().decode()
             return pickle.loads(file)
         else:
-            logger.error("Unsupported file type for S3 data loading.")
+            logging.error("Unsupported file type for S3 data loading.")
 
     def get_s3_data_paths(self, root, file_types):
         """

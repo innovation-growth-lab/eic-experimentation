@@ -11,9 +11,9 @@ Example:
 
 from typing import Dict, Sequence
 from time import sleep
+import logging
 import argparse
 import requests
-import logging
 import pandas as pd
 
 

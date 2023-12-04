@@ -32,8 +32,8 @@ def get_yaml_config(file_path: Path) -> Optional[dict]:
     if isinstance(file_path, str):
         try:
             file_path = PROJECT_DIR / "config" / file_path
-        except TypeError:
-            raise TypeError("file_path must be a Path object or a string that completes a path.")
+        except TypeError as exc:
+            raise TypeError("file_path must be a Path object or a string that completes a path.") from exc
     if file_path.exists():
         with open(file_path, "rt", encoding="utf-8") as f:
             return yaml.load(f.read(), Loader=yaml.FullLoader)
