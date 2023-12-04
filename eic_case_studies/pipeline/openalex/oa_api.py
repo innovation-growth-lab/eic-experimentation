@@ -78,6 +78,7 @@ class OaFlow(FlowSpec):
             self.iso_codes = [self.iso_code]
         self.next(self.get_institutions, foreach="iso_codes")
 
+    # [TODO] Can only do one worker at a time, otherwise error.
     @step
     def get_institutions(self):
         """
@@ -88,13 +89,13 @@ class OaFlow(FlowSpec):
         import random
 
         self.oa_institutions = get_oa_institutions(
-            self.iso_code, timesleep=random.randint(0, 3)
+            self.input, timesleep=random.randint(0, 3)
         )
 
         if self.save_to_s3:
             s3dm = S3DataManager()
             s3dm.save_to_s3(
-                self.oa_institutions, f"data/oa/organisations/{self.iso_code}.parquet"
+                self.oa_institutions, f"data/oa/organisations/{self.input}.parquet"
             )
 
         self.next(self.join)
