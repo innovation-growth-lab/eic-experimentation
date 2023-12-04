@@ -5,3 +5,6 @@ eic_case_studies/inputs/*
 .vscode
 .streamlit
 __pycache__
+.envrc
+eic_case_studies/notebooks/exploration.ipynb
+*/data/*
