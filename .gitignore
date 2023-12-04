@@ -1,5 +1,7 @@
 eic_benchmark_report_generator/data/*
 eic_benchmark_report_generator/outputs/*
-eic_benchmark_report_generator/__pycache__/__init__.cpython-310.pyc
+eic_case_studies/inputs/*
 *.egg-info
 .vscode
+.streamlit
+__pycache__

@@ -88,7 +88,7 @@ class RadarPlot:
                 ha, distance = "right", 1.1
             ax.text(
                 angle,
-                9 * distance,
+                8.5 * distance,
                 label,
                 size=10,
                 horizontalalignment=ha,
@@ -116,7 +116,7 @@ class RadarPlot:
             "eic_benchmark_report_generator/outputs/figures",
             f"radar_plot_{'all' if not highlight else highlight}.png",
         )
-        plt.savefig(radar_output_path)
+        plt.savefig(radar_output_path, dpi=300)
         plt.close()
 
 
@@ -197,7 +197,7 @@ class HistogramPlot:
                 "eic_benchmark_report_generator/outputs/figures",
                 f"histogram_plot_{'all' if not highlight else highlight}_{i}.png",
             )
-            plt.savefig(histogram_output_path)
+            plt.savefig(histogram_output_path, dpi=300)
             plt.close()
 
 
@@ -245,7 +245,7 @@ def generate_colored_table(df: pd.DataFrame):
         "eic_benchmark_report_generator/outputs/figures",
         "colored_table.png",
     )
-    plt.savefig(output_path)
+    plt.savefig(output_path, dpi=300)
     plt.close()
 
 
@@ -314,7 +314,7 @@ def plot_category_histograms(
             "histogram_plot_all_main.png",
         )
 
-    plt.savefig(histogram_output_path)
+    plt.savefig(histogram_output_path, dpi=300)
     plt.close()
 
 
