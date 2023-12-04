@@ -1,0 +1,43 @@
+COUNTRY_ISO:
+  [
+    BE,
+    BG,
+    CZ,
+    DK,
+    DE,
+    EE,
+    IE,
+    EL,
+    ES,
+    FR,
+    HR,
+    IT,
+    CY,
+    LV,
+    LT,
+    LU,
+    HU,
+    MT,
+    NL,
+    AT,
+    PL,
+    PT,
+    RO,
+    SI,
+    SK,
+    FI,
+    SE
+  ]
+
+ARTICLE_COLUMNS:
+  [
+    id, 
+    display_name, 
+    publication_date, 
+    primary_location, 
+    authorships, 
+    cited_by_count, 
+    counts_by_year, 
+    concepts, 
+    abstract
+]

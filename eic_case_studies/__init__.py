@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 # Constants
 BUCKET_NAME = "eic-case-studies"
 PUBLIC_DATA_FOLDER_NAME = "data"
-PROJECT_DIR = Path(__file__).resolve().parents[1]
+PROJECT_DIR = Path(__file__).resolve().parents[1] / "eic_case_studies"
 INFO_LOG_PATH = str(PROJECT_DIR / "info.log")
 ERROR_LOG_PATH = str(PROJECT_DIR / "errors.log")
 
@@ -29,6 +29,11 @@ def get_yaml_config(file_path: Path) -> Optional[dict]:
     Returns:
         Optional[dict]: The configuration dictionary if the file exists, otherwise None.
     """
+    if isinstance(file_path, str):
+        try:
+            file_path = PROJECT_DIR / "config" / file_path
+        except TypeError:
+            raise TypeError("file_path must be a Path object or a string that completes a path.")
     if file_path.exists():
         with open(file_path, "rt", encoding="utf-8") as f:
             return yaml.load(f.read(), Loader=yaml.FullLoader)

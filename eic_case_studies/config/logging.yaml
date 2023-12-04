@@ -15,7 +15,7 @@ handlers:
     class: logging.handlers.RotatingFileHandler
     level: INFO
     formatter: simple
-    filename: ext://dap_aria_mapping.info_out
+    filename: eic_case_studies.info_out
     maxBytes: 10485760 # 10MB
     backupCount: 20
     encoding: utf8
@@ -24,13 +24,13 @@ handlers:
     class: logging.handlers.RotatingFileHandler
     level: ERROR
     formatter: simple
-    filename: ext://dap_aria_mapping.error_out
+    filename: eic_case_studies.error_out
     maxBytes: 10485760 # 10MB
     backupCount: 20
     encoding: utf8
 
 loggers:
-  "dap_aria_mapping":
+  "eic_case_studies":
     level: INFO
     handlers: [console, info_file_handler, error_file_handler]
     propagate: no
