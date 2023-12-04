@@ -13,9 +13,8 @@ from typing import Dict, Sequence
 from time import sleep
 import argparse
 import requests
+import logging
 import pandas as pd
-
-from eic_case_studies import logger
 
 
 def get_cursor_url(iso_code: str) -> str:
@@ -68,7 +67,7 @@ def get_oa_institutions(iso_code: str, timesleep: int = 0) -> pd.DataFrame:
     oa_inst = []
     generator = institutions_generator(iso_code)
     for institutions in generator:
-        logger.info(
+        logging.info(
             "Retrieved %d institutions for %s. Total: %d.",
             len(institutions),
             iso_code,
