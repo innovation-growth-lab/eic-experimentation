@@ -1,5 +1,12 @@
 """
-python -m eic_case_studies.pipeline.openalex.oa_api --environment pypi run --max-workers 1 --iso_code all --save_to_s3 True
+This module exsecutes a Flow to obtain OpenAlex institutions for a given country.
+
+Example:
+    To retrieve OpenAlex institutions for all countries, run the following command:
+
+        $ python -m eic_case_studies.pipeline.openalex.oa_institutions_api --environment pypi run --max-workers 1 --iso_code all --save_to_s3 True
+
+    This will iteratively save S3 files for each country in the data/oa/organisations folder.
 """
 
 from metaflow import FlowSpec, step, Parameter, pypi_base  # pylint: disable=E0611
@@ -19,6 +26,10 @@ from metaflow import FlowSpec, step, Parameter, pypi_base  # pylint: disable=E06
 class OaFlow(FlowSpec):
     """
     A flow to retrieve OpenAlex institutions for a given ISO code.
+
+    Parameters:
+    - iso_code (str): The ISO code of the country. Default is "EE".
+    - save_to_s3 (bool): Whether to save the data to S3. Default is False.
     """
 
     iso_code = Parameter(
@@ -53,7 +64,7 @@ class OaFlow(FlowSpec):
         """
         Retrieves OpenAlex institutions for a given ISO code.
         """
-        from getters.oa import get_oa_institutions  # pylint: disable=C0415
+        from getters.oa_institutions import get_oa_institutions  # pylint: disable=C0415
         from getters.s3io import S3DataManager  # pylint: disable=C0415
         import random  # pylint: disable=C0415
 
@@ -73,6 +84,12 @@ class OaFlow(FlowSpec):
     def join(self, inputs):
         """
         Join the flows.
+
+        Parameters:
+        - inputs (List[OaFlow]): List of input flows.
+
+        Returns:
+        - oa_institutions (pd.DataFrame): Joined dataframe of OpenAlex institutions.
         """
         import pandas as pd  # pylint: disable=C0415
 
