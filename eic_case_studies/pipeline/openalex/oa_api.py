@@ -1,8 +1,8 @@
 """
-python -m eic_case_studies.pipeline.openalex.oa_api --environment pypi run --iso_code EE --save_to_s3 True
+python -m eic_case_studies.pipeline.openalex.oa_api --environment pypi run --max-workers 1 --iso_code all --save_to_s3 True
 """
 
-from metaflow import FlowSpec, step, batch, Parameter, pypi_base
+from metaflow import FlowSpec, step, Parameter, pypi_base  # pylint: disable=E0611
 
 
 @pypi_base(
@@ -38,57 +38,26 @@ class OaFlow(FlowSpec):
         """
         Start the flow.
         """
-        import yaml
+        import yaml  # pylint: disable=C0415
 
         if self.iso_code == "all":
-            # [TODO] Figure out how to load the config file.
-            # with open("eic_case_studies/config/oa.yaml", "rt", encoding="utf-8") as f:
-            #     config = yaml.load(f.read(), Loader=yaml.FullLoader)
-            # self.iso_codes = config["COUNTRY_ISO"]
-            self.iso_codes = [
-                "BE",
-                "BG",
-                "CZ",
-                "DK",
-                "DE",
-                "EE",
-                "IE",
-                "EL",
-                "ES",
-                "FR",
-                "HR",
-                "IT",
-                "CY",
-                "LV",
-                "LT",
-                "LU",
-                "HU",
-                "MT",
-                "NL",
-                "AT",
-                "PL",
-                "PT",
-                "RO",
-                "SI",
-                "SK",
-                "FI",
-                "SE",
-            ]
+            with open("eic_case_studies/config/oa.yaml", "rt", encoding="utf-8") as f:
+                config = yaml.load(f.read(), Loader=yaml.FullLoader)
+            self.iso_codes = config["COUNTRY_ISO"]  # pylint: disable=W0201
         else:
-            self.iso_codes = [self.iso_code]
+            self.iso_codes = [self.iso_code]  # pylint: disable=W0201
         self.next(self.get_institutions, foreach="iso_codes")
 
-    # [TODO] Can only do one worker at a time, otherwise error.
     @step
     def get_institutions(self):
         """
         Retrieves OpenAlex institutions for a given ISO code.
         """
-        from getters.oa import get_oa_institutions
-        from getters.s3io import S3DataManager
-        import random
+        from getters.oa import get_oa_institutions  # pylint: disable=C0415
+        from getters.s3io import S3DataManager  # pylint: disable=C0415
+        import random  # pylint: disable=C0415
 
-        self.oa_institutions = get_oa_institutions(
+        self.oa_institutions = get_oa_institutions(  # pylint: disable=W0201
             self.input, timesleep=random.randint(0, 3)
         )
 
@@ -105,9 +74,11 @@ class OaFlow(FlowSpec):
         """
         Join the flows.
         """
-        import pandas as pd
+        import pandas as pd  # pylint: disable=C0415
 
-        self.oa_institutions = pd.concat([input.oa_institutions for input in inputs])
+        self.oa_institutions = pd.concat(  # pylint: disable=W0201
+            [input.oa_institutions for input in inputs]
+        )
         self.next(self.end)
 
     @step
@@ -115,7 +86,7 @@ class OaFlow(FlowSpec):
         """
         End the flow.
         """
-        pass
+        pass  # pylint: disable=W0107
 
 
 if __name__ == "__main__":
