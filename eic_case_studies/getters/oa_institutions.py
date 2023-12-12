@@ -4,7 +4,7 @@ This module contains functions to retrieve OpenAlex institutions for a given cou
 Example:
     To retrieve OpenAlex institutions for Estonia, run the following command:
 
-        $ python -m eic_case_studies.getters.oa --key EE
+        $ python -m eic_case_studies.getters.oa_works --key "I74788687" --email david.ampudia@nesta.org.uk
 
     This will create a file called oa_institutions_EE.csv in the current directory.
 """

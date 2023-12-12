@@ -5,6 +5,7 @@ Module for S3 input/output operations.
 
 from fnmatch import fnmatch
 from decimal import Decimal
+import io
 import logging
 import json
 import pickle
@@ -49,7 +50,12 @@ class S3DataManager:
         obj = self.s3.Object(self.bucket_name, output_file_dir)
 
         if fnmatch(output_file_dir, "*.csv"):
-            output_var.to_csv(f"s3://{self.bucket_name}/{output_file_dir}", index=False)
+            csv_buffer = io.StringIO()
+            output_var.to_csv(csv_buffer, index=False)
+            # Move to the beginning of the buffer
+            csv_buffer.seek(0)
+            # Upload the buffer content to S3
+            obj.put(Body=csv_buffer.getvalue())
         elif fnmatch(output_file_dir, "*.parquet"):
             output_var.to_parquet(f"s3://{self.bucket_name}/{output_file_dir}", index=False)
         elif fnmatch(output_file_dir, "*.pkl") or fnmatch(output_file_dir, "*.pickle"):
@@ -104,7 +110,8 @@ class S3DataManager:
             file = obj.get()["Body"].read().decode()
             return json.loads(file)
         elif fnmatch(file_name, "*.csv"):
-            return pd.read_csv(f"s3://{self.bucket_name}/{file_name}")
+            data = io.BytesIO(obj.get()['Body'].read())
+            return pd.read_csv(data)
         elif fnmatch(file_name, "*.parquet"):
             return pd.read_parquet(f"s3://{self.bucket_name}/{file_name}")
         elif fnmatch(file_name, "*.pkl") or fnmatch(file_name, "*.pickle"):
