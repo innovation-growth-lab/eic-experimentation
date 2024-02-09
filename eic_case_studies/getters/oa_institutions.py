@@ -9,11 +9,12 @@ Example:
     This will create a file called oa_institutions_EE.csv in the current directory.
 """
 
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Generator
 from time import sleep
 import logging
 import argparse
 import requests
+from requests.adapters import HTTPAdapter, Retry
 import pandas as pd
 
 
@@ -33,7 +34,7 @@ def get_cursor_url(iso_code: str) -> str:
     return f"{base_url}?{filter_param}&{cursor_param}&{select_param}"
 
 
-def institutions_generator(iso_code: str) -> Sequence[Dict[str, str]]:
+def institutions_generator(iso_code: str) -> Generator[Sequence[Dict[str, str]], None, None]:
     """
     Creates a generator that yields a list of institutions from the OpenAlex API.
     It uses cursor pagination to get all the institutions.
@@ -44,10 +45,16 @@ def institutions_generator(iso_code: str) -> Sequence[Dict[str, str]]:
     Yields:
         Iterator[list]: A generator that yields a list of institutions from the OpenAlex API.
     """
+    session = requests.Session()
+    retries = Retry(
+        total=5, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504]
+    )
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+
     cursor = "*"
     while cursor:
         cursor_url = get_cursor_url(iso_code)
-        r = requests.get(cursor_url.format(cursor), timeout=3_600)
+        r = session.get(cursor_url.format(cursor), timeout=60)
         data = r.json()
         results = data.get("results")
         cursor = data["meta"].get("next_cursor", False)
