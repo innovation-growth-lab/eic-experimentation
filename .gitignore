@@ -4,7 +4,7 @@ eic_case_studies/inputs/*
 *.egg-info
 .vscode
 .streamlit
-__pycache__
+**/__pycache__/
 .envrc
 eic_case_studies/notebooks/exploration.ipynb
 */data/*

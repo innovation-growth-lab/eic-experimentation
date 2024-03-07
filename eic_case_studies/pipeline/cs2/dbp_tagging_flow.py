@@ -27,6 +27,7 @@ from functools import partial
         "boto3": "1.34.1",
         "pandas": "2.1.3",
         "openpyxl": "3.1.2",
+        "pyarrow": "14.0.1",
     },
     python="3.12.0",
 )
@@ -65,6 +66,13 @@ class DBpediaAnnotationFlow(FlowSpec):
             subset="Proposal Number", inplace=True
         )
 
+        # clean names, transform them to snake case
+        self.pathfinder_proposals.columns = (
+            self.pathfinder_proposals.columns.str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+        )
+
         self.next(self.annotate_titles)
 
     @step
@@ -73,7 +81,7 @@ class DBpediaAnnotationFlow(FlowSpec):
         Annotate the "Proposal Title" column.
         """
         self.pathfinder_proposals["title_annotations"] = self.pathfinder_proposals[
-            "Proposal Title"
+            "proposal_title"
         ].apply(partial(self.get_annotation, confidence=0.35, support=1000))
         self.next(self.annotate_abstracts)
 
@@ -83,7 +91,7 @@ class DBpediaAnnotationFlow(FlowSpec):
         Annotate the "Proposal Abstract" column.
         """
         self.pathfinder_proposals["abstract_annotations"] = self.pathfinder_proposals[
-            "Proposal Abstract"
+            "proposal_abstract"
         ].apply(partial(self.get_annotation, confidence=0.35, support=1000))
         self.next(self.save_results)
 
@@ -100,7 +108,7 @@ class DBpediaAnnotationFlow(FlowSpec):
             s3dm = S3DataManager()
             s3dm.save_to_s3(
                 self.pathfinder_proposals,
-                "data/02_intermediate/he_2020/pathfinder/proposals/main_dbp_annotated.csv",
+                "data/02_intermediate/he_2020/pathfinder/proposals/main_dbp_annotated.parquet",
             )
         else:
             self.pathfinder_proposals.to_csv(
