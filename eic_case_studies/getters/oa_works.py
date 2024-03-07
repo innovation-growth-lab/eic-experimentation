@@ -180,7 +180,7 @@ if __name__ == "__main__":
 
     logging.info("Saving works from institution %s.", args.key)
     s3dm = S3DataManager()
-    # s3dm.save_to_s3(oa_works, f"data/oa/organisations/works/{args.key}.parquet")
+    s3dm.save_to_s3(oa_works, f"data/01_raw/oa/organisations/works/{args.key}.parquet")
 
     # use io module to save local copy, avoid "Killed" error
     from io import BytesIO

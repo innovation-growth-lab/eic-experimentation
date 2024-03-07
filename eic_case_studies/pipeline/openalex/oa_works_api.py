@@ -152,7 +152,7 @@ class OaWorksFlow(FlowSpec):
         from getters.s3io import S3DataManager  # pylint: disable=C0415
 
         s3dm = S3DataManager()
-        s3dm.save_to_s3(self.all_works, "data/oa/organisations/dump.json")
+        s3dm.save_to_s3(self.all_works, "data/01_raw/oa/organisations/dump.json")
 
         self.next(self.end)
 

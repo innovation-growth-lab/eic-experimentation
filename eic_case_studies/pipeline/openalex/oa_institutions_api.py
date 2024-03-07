@@ -75,7 +75,7 @@ class OaFlow(FlowSpec):
         if self.save_to_s3:
             s3dm = S3DataManager()
             s3dm.save_to_s3(
-                self.oa_institutions, f"data/oa/organisations/{self.input}.parquet"
+                self.oa_institutions, f"data/01_raw/oa/organisations/{self.input}.parquet"
             )
 
         self.next(self.join)

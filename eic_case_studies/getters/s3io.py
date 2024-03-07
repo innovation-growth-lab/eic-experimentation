@@ -112,6 +112,9 @@ class S3DataManager:
         elif fnmatch(file_name, "*.csv"):
             data = io.BytesIO(obj.get()['Body'].read())
             return pd.read_csv(data)
+        elif fnmatch(file_name, "*.xlsx"):
+            data = io.BytesIO(obj.get()['Body'].read())
+            return pd.read_excel(data, engine="openpyxl")
         elif fnmatch(file_name, "*.parquet"):
             return pd.read_parquet(f"s3://{self.bucket_name}/{file_name}")
         elif fnmatch(file_name, "*.pkl") or fnmatch(file_name, "*.pickle"):
