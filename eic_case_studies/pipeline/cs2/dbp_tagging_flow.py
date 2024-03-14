@@ -47,6 +47,7 @@ class DBpediaAnnotationFlow(FlowSpec):
         """
         Load data and initialize NLP model.
         """
+        import pandas as pd
         from getters.s3io import (
             S3DataManager,
         )
@@ -57,9 +58,29 @@ class DBpediaAnnotationFlow(FlowSpec):
 
         # create an instance of the S3DataManager class and load data
         s3dm = S3DataManager()
-        self.pathfinder_proposals = s3dm.load_s3_data(
-            "data/01_raw/he_2020/pathfinder/proposals/main.xlsx"
+        self.pathfinder_he_proposals = s3dm.load_s3_data(
+            "data/01_raw/he_2020/pathfinder/proposals/main_he.xlsx",
+            skiprows=3,
+            usecols=lambda x: "Unnamed" not in x,
         )
+        self.pathfinder_h2020_proposals = s3dm.load_s3_data(
+            "data/01_raw/he_2020/pathfinder/proposals/main_h2020.xlsx",
+            skiprows=3,
+            usecols=lambda x: "Unnamed" not in x,
+        )
+
+        # concatenate the two datasets
+        self.pathfinder_proposals = pd.concat(
+            [self.pathfinder_he_proposals, self.pathfinder_h2020_proposals]
+        )
+
+        # make sure title and abstract are strings
+        self.pathfinder_proposals["Proposal Title"] = self.pathfinder_proposals[
+            "Proposal Title"
+        ].astype(str)
+        self.pathfinder_proposals["Proposal Abstract"] = self.pathfinder_proposals[
+            "Proposal Abstract"
+        ].astype(str)
 
         # drop duplicate rows based on the "Proposal Number" column
         self.pathfinder_proposals.drop_duplicates(
