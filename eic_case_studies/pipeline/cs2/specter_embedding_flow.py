@@ -157,6 +157,11 @@ class EmbeddingEncoder(FlowSpec):
             S3DataManager,
         )
 
+        self.annotated_proposals = self.annotated_proposals[
+            ~self.annotated_proposals["keyword_embedding"].isna()
+        ]
+        
+
         if self.save_to_s3:
             s3dm = S3DataManager()
             s3dm.save_to_s3(

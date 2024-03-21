@@ -103,7 +103,7 @@ class DBpediaAnnotationFlow(FlowSpec):
         """
         self.pathfinder_proposals["title_annotations"] = self.pathfinder_proposals[
             "proposal_title"
-        ].apply(partial(self.get_annotation, confidence=0.35, support=1000))
+        ].apply(partial(self.get_annotation, confidence=0.25, support=1000))
         self.next(self.annotate_abstracts)
 
     @step
@@ -113,7 +113,7 @@ class DBpediaAnnotationFlow(FlowSpec):
         """
         self.pathfinder_proposals["abstract_annotations"] = self.pathfinder_proposals[
             "proposal_abstract"
-        ].apply(partial(self.get_annotation, confidence=0.35, support=1000))
+        ].apply(partial(self.get_annotation, confidence=0.25, support=1000))
         self.next(self.save_results)
 
     @step

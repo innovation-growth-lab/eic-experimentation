@@ -11,6 +11,7 @@ Example:
 # pylint: skip-file
 from metaflow import FlowSpec, step, Parameter, pypi_base
 import numpy as np
+import pandas as pd
 from scipy.special import softmax
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -51,9 +52,14 @@ class TopicAssignmentFlow(FlowSpec):
         self.annotated_proposals = s3dm.load_s3_data(
             "data/02_intermediate/he_2020/pathfinder/proposals/main_dbp_embeddings.parquet"
         )
+
         self.cwts_taxonomy = s3dm.load_s3_data(
             "data/02_intermediate/cwts/main_dbp_embeddings.parquet"
         )
+
+        # topic_id as string
+        self.cwts_taxonomy["topic_id"] = self.cwts_taxonomy["topic_id"].astype(str)
+
         self.next(self.process_embeddings)
 
     @step
@@ -69,9 +75,18 @@ class TopicAssignmentFlow(FlowSpec):
             topic_embeddings_df.apply(lambda x: x.shape[0] == 10)
         ]
         self.topic_embeddings = np.stack(topic_embeddings_df)
-        self.proposal_embeddings = np.stack(
-            self.annotated_proposals["keyword_embedding"]
+
+        # Drop duplicate keywords
+        self.unique_keywords = self.annotated_proposals.drop_duplicates(
+            subset="keywords"
         )
+
+        # Stack keyword embeddings
+        self.proposal_embeddings = np.stack(
+            self.unique_keywords["keyword_embedding"].apply(np.stack)
+        )
+
+        # Create a dictionary to map index to topic id
         self.index_to_topic_id = dict(
             zip(
                 range(len(topic_embeddings_df)),
@@ -87,7 +102,7 @@ class TopicAssignmentFlow(FlowSpec):
         """
         topic_embeddings_2d = self.topic_embeddings.reshape(-1, 768)
         cos_sim_2d = cosine_similarity(self.proposal_embeddings, topic_embeddings_2d)
-        self.cos_sim = cos_sim_2d.reshape(380, 4514, 10)
+        self.cos_sim = cos_sim_2d.reshape(self.proposal_embeddings.shape[0], 4514, 10)
         self.next(self.filter_similarity)
 
     @step
@@ -121,14 +136,30 @@ class TopicAssignmentFlow(FlowSpec):
         """
         Merge topic assignments back into proposals dataset.
         """
-        self.annotated_proposals["topic_id"] = self.topic_assignment
+        self.unique_keywords["cs_topic_id"] = self.topic_assignment
+        
+        # create a dictionary to map keyword to topic id
+        self.keyword_to_topic_id = dict(
+            zip(
+                self.unique_keywords["keywords"].values,
+                self.unique_keywords["cs_topic_id"].values.astype(str),
+            )
+        )
+
+        # map the topic id to the proposals
+        self.annotated_proposals["cs_topic_id"] = self.annotated_proposals["keywords"].map(
+            self.keyword_to_topic_id
+        )
+
         self.annotated_proposals = self.annotated_proposals.merge(
             self.cwts_taxonomy[
                 ["topic_id", "topic_name", "subfield_name", "field_name", "domain_name"]
             ].drop_duplicates(),
-            on="topic_id",
+            left_on="cs_topic_id",
+            right_on="topic_id",
             how="left",
         )
+
         self.next(self.save_results)
 
     @step
@@ -154,7 +185,7 @@ class TopicAssignmentFlow(FlowSpec):
         """
         End of the flow.
         """
-        pass  # Optionally, save the final DataFrame to a file or a database
+        pass
 
 
 if __name__ == "__main__":
