@@ -35,6 +35,12 @@ class TopicSimilarityFlow(FlowSpec):
         default=False,
     )
 
+    use_topic_means = Parameter(
+        "normalise",
+        help="Whether to normalise the embeddings.",
+        default=False,
+    )
+
     @step
     def start(self):
         """
@@ -52,45 +58,6 @@ class TopicSimilarityFlow(FlowSpec):
 
         self.next(self.process_embeddings)
 
-    # @step
-    # def process_embeddings(self):
-    #     """
-    #     Process and reshape topic embeddings.
-    #     """
-    #     topic_embeddings_df = self.cwts_taxonomy.groupby(["topic_id"])[
-    #         "keyword_embedding"
-    #     ].apply(np.stack)
-    #     self.topic_embeddings_df = topic_embeddings_df[
-    #         topic_embeddings_df.apply(lambda x: x.shape[0] == 10)
-    #     ]
-    #     self.topic_embeddings = np.stack(self.topic_embeddings_df)
-
-    #     # average on axis 1
-    #     self.topic_embeddings = np.mean(self.topic_embeddings, axis=1)
-
-    #     self.next(self.compute_similarity)
-
-    # @step
-    # def compute_similarity(self):
-    #     """
-    #     Compute cosine similarity between each topic and every other topic.
-    #     """
-    #     self.disparity = 1 - cosine_similarity(self.topic_embeddings)
-
-    #     # transform to a dataframe with topic ids as index and columns
-    #     self.disparity_df = self.topic_embeddings_df.index.to_frame().set_index(
-    #         "topic_id"
-    #     )
-
-    #     self.disparity_df = self.disparity_df.assign(
-    #         **{
-    #             topic_id: self.disparity[i]
-    #             for i, topic_id in enumerate(self.disparity_df.index)
-    #         }
-    #     )
-
-    #     self.next(self.save_results)
-
     @step
     def process_embeddings(self):
         """
@@ -104,6 +71,9 @@ class TopicSimilarityFlow(FlowSpec):
         ]
         self.topic_embeddings = np.stack(self.topic_embeddings_df)
 
+        if self.use_topic_means:
+            self.topic_embeddings = np.mean(self.topic_embeddings, axis=1)
+
         self.next(self.compute_similarity)
 
     @step
@@ -111,26 +81,41 @@ class TopicSimilarityFlow(FlowSpec):
         """
         Compute cosine similarity between each topic and every other topic.
         """
-        num_topics = len(self.topic_embeddings)
+        if self.use_topic_means:
+            self.disparity = 1 - cosine_similarity(self.topic_embeddings)
 
-        # Initialize an empty array to store the mean similarities for each topic
-        mean_dissimilarities = np.empty((num_topics, num_topics))
+            # transform to a dataframe with topic ids as index and columns
+            self.disparity_df = self.topic_embeddings_df.index.to_frame().set_index(
+                "topic_id"
+            )
 
-        # Loop over each topic
-        for i in range(num_topics):
-            print(f"Computing similarities for topic {i}")
-            # Loop over each other topic
-            for j in range(num_topics):
-                # Compute the cosine similarity for each word in topic i against each word in topic j
-                dissimilarities = 1 - cosine_similarity(
-                    self.topic_embeddings[i], self.topic_embeddings[j]
-                )
-                # Take the mean of these similarities
-                mean_dissimilarities[i, j] = np.mean(dissimilarities)
+            self.disparity_df = self.disparity_df.assign(
+                **{
+                    topic_id: self.disparity[i]
+                    for i, topic_id in enumerate(self.disparity_df.index)
+                }
+            )
+        else:
+            num_topics = len(self.topic_embeddings)
 
-        self.disparity_df = pd.DataFrame(
-            mean_dissimilarities, columns=self.topic_embeddings_df.index
-        ).set_index(self.topic_embeddings_df.index)
+            # Initialize an empty array to store the mean similarities for each topic
+            mean_dissimilarities = np.empty((num_topics, num_topics))
+
+            # Loop over each topic
+            for i in range(num_topics):
+                print(f"Computing similarities for topic {i}")
+                # Loop over each other topic
+                for j in range(num_topics):
+                    # Compute the cosine similarity for each word in topic i against each word in topic j
+                    dissimilarities = 1 - cosine_similarity(
+                        self.topic_embeddings[i], self.topic_embeddings[j]
+                    )
+                    # Take the mean of these similarities
+                    mean_dissimilarities[i, j] = np.mean(dissimilarities)
+
+            self.disparity_df = pd.DataFrame(
+                mean_dissimilarities, columns=self.topic_embeddings_df.index
+            ).set_index(self.topic_embeddings_df.index)
 
         self.next(self.save_results)
 
