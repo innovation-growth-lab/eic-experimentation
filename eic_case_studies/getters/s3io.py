@@ -90,7 +90,7 @@ class S3DataManager:
             file = obj.get()["Body"].read().decode()
             return [json.loads(item) for item in file.strip().split("\n")]
 
-    def load_s3_data(self, file_name):
+    def load_s3_data(self, file_name, **kwargs):
         """
         Load data from S3 based on file extension.
 
@@ -114,7 +114,7 @@ class S3DataManager:
             return pd.read_csv(data)
         elif fnmatch(file_name, "*.xlsx"):
             data = io.BytesIO(obj.get()['Body'].read())
-            return pd.read_excel(data, engine="openpyxl")
+            return pd.read_excel(data, engine="openpyxl", **kwargs)
         elif fnmatch(file_name, "*.parquet"):
             return pd.read_parquet(f"s3://{self.bucket_name}/{file_name}")
         elif fnmatch(file_name, "*.pkl") or fnmatch(file_name, "*.pickle"):

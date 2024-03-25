@@ -108,9 +108,9 @@ class OaWorksFlow(FlowSpec):
 
         print(f"Retrieving works for institution: {self.input}")
 
-        from getters.oa_works import get_oa_works  # pylint: disable=C0415
+        from getters.oa_works import get_oa_institution_works  # pylint: disable=C0415
 
-        self.oa_works = get_oa_works(  # pylint: disable=W0201
+        self.oa_works = get_oa_institution_works(  # pylint: disable=W0201
             institution_id=self.input, email=self.email, pubdate="2015-01-01"
         )
 

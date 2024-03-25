@@ -1,15 +1,14 @@
-"""This module contains the DBpediaAnnotationFlow class, which is 
-    a Metaflow flow to tag the Pathfinder proposals with DBpedia 
-    annotations. The DBpedia Spotlight API is used to annotate the
-    text data in the "Proposal Title" and "Proposal Abstract" columns
-    of the Pathfinder proposals dataset. The annotations are retrieved
-    in JSON format and stored in new columns in the dataset.
+"""This module contains the DBpediaAnnotationFlow class, which is a Metaflow flow
+    to tag OpenAlex works with DBpedia annotations. The flow consists of four steps:
+    1. start: Load data and initialize NLP model.
+    2. annotate_titles: Annotate the "title" column.
+    3. annotate_abstracts: Annotate the "abstract" column.
+    4. save_results: Save the annotated dataset to S3 or local file system.
 
-Example:
-    To run the DBpediaAnnotationFlow flow, use the following command:
+    Example:
+        $ python -m eic_case_studies.pipeline.cs2.researchers.dbp_tagging_flow --environment pypi run --save_to_s3 True --counterfactual False
 
-        $ python -m eic_case_studies.pipeline.cs2.dbp_tagging_flow 
-            --environment pypi run --save_to_s3 True
+
 """
 
 # pylint: skip-file
@@ -42,6 +41,12 @@ class DBpediaAnnotationFlow(FlowSpec):
         default=False,
     )
 
+    counterfactual = Parameter(
+        "counterfactual",
+        help="Whether to run on counterfactual researchers.",
+        default=False,
+    )
+
     @step
     def start(self):
         """
@@ -58,41 +63,19 @@ class DBpediaAnnotationFlow(FlowSpec):
 
         # create an instance of the S3DataManager class and load data
         s3dm = S3DataManager()
-        self.pathfinder_he_proposals = s3dm.load_s3_data(
-            "data/01_raw/he_2020/pathfinder/proposals/main_he.xlsx",
-            skiprows=3,
-            usecols=lambda x: "Unnamed" not in x,
-        )
-        self.pathfinder_h2020_proposals = s3dm.load_s3_data(
-            "data/01_raw/he_2020/pathfinder/proposals/main_h2020.xlsx",
-            skiprows=3,
-            usecols=lambda x: "Unnamed" not in x,
-        )
-
-        # concatenate the two datasets
-        self.pathfinder_proposals = pd.concat(
-            [self.pathfinder_he_proposals, self.pathfinder_h2020_proposals]
-        )
-
+        if not self.counterfactual:
+            self.researcher_outputs = s3dm.load_s3_data(
+                "data/03_primary/he_2020/pathfinder/roles/main_works.parquet"
+            )
+        else:
+            self.researcher_outputs = s3dm.load_s3_data(
+                "data/03_primary/he_2020/pathfinder/roles/main_cf_works.parquet"
+            )
         # make sure title and abstract are strings
-        self.pathfinder_proposals["Proposal Title"] = self.pathfinder_proposals[
-            "Proposal Title"
+        self.researcher_outputs["title"] = self.researcher_outputs["title"].astype(str)
+        self.researcher_outputs["abstract"] = self.researcher_outputs[
+            "abstract"
         ].astype(str)
-        self.pathfinder_proposals["Proposal Abstract"] = self.pathfinder_proposals[
-            "Proposal Abstract"
-        ].astype(str)
-
-        # drop duplicate rows based on the "Proposal Number" column
-        self.pathfinder_proposals.drop_duplicates(
-            subset="Proposal Number", inplace=True
-        )
-
-        # clean names, transform them to snake case
-        self.pathfinder_proposals.columns = (
-            self.pathfinder_proposals.columns.str.strip()
-            .str.lower()
-            .str.replace(" ", "_")
-        )
 
         self.next(self.annotate_titles)
 
@@ -101,8 +84,8 @@ class DBpediaAnnotationFlow(FlowSpec):
         """
         Annotate the "Proposal Title" column.
         """
-        self.pathfinder_proposals["title_annotations"] = self.pathfinder_proposals[
-            "proposal_title"
+        self.researcher_outputs["title_annotations"] = self.researcher_outputs[
+            "title"
         ].apply(partial(self.get_annotation, confidence=0.25, support=1000))
         self.next(self.annotate_abstracts)
 
@@ -111,8 +94,8 @@ class DBpediaAnnotationFlow(FlowSpec):
         """
         Annotate the "Proposal Abstract" column.
         """
-        self.pathfinder_proposals["abstract_annotations"] = self.pathfinder_proposals[
-            "proposal_abstract"
+        self.researcher_outputs["abstract_annotations"] = self.researcher_outputs[
+            "abstract"
         ].apply(partial(self.get_annotation, confidence=0.25, support=1000))
         self.next(self.save_results)
 
@@ -128,12 +111,12 @@ class DBpediaAnnotationFlow(FlowSpec):
         if self.save_to_s3:
             s3dm = S3DataManager()
             s3dm.save_to_s3(
-                self.pathfinder_proposals,
-                "data/02_intermediate/he_2020/pathfinder/proposals/main_dbp_annotated.parquet",
+                self.researcher_outputs,
+                "data/03_primary/he_2020/pathfinder/roles/outputs/main_dbp_annotated.parquet",
             )
         else:
-            self.pathfinder_proposals.to_csv(
-                "data/02_intermediate/main_dbp_annotated.csv",
+            self.researcher_outputs.to_csv(
+                "data/03_primary/main_dbp_annotated.csv",
                 index=False,
             )
         self.next(self.end)
