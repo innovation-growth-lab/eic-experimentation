@@ -11,3 +11,4 @@ eic_case_studies/notebooks/exploration.ipynb
 *.info_out
 *.error_out
 .metaflow
+**/base/

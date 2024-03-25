@@ -71,6 +71,13 @@ class ResearcherDiversityFlow(FlowSpec):
             index=self.researchers_outputs_agg.index,
         )
 
+        # compute div from the three components
+        self.researchers_outputs_agg["div"] = (
+            self.researchers_outputs_agg["average_disparity"]
+            * self.researchers_outputs_agg["variety"]
+            * self.researchers_outputs_agg["balance"]
+        )
+
         self.next(self.save_data)
 
     @step

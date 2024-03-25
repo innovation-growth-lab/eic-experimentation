@@ -121,6 +121,7 @@ class JoinResearchers(FlowSpec):
                 {
                     "Proposal Submission Date": ["min", "max"],
                     "Proposal Last Evaluation Status": "last",
+                    "Proposal Topic Code": "last",
                 }
             )
             .reset_index()
@@ -138,6 +139,7 @@ class JoinResearchers(FlowSpec):
                 "Proposal Submission Date_min": "first_observed",
                 "Proposal Submission Date_max": "last_observed",
                 "Proposal Last Evaluation Status_last": "status",
+                "Proposal Topic Code_last": "proposal_call_id",
             }
         )
 
@@ -208,6 +210,22 @@ class JoinResearchers(FlowSpec):
         self.researchers_outputs_agg["status"] = self.researchers_outputs_agg[
             "status"
         ].fillna("NOT_EIC")
+
+        # add the proposal call id by creating the dictionary and mapping to researcher
+        self.researchers_outputs_agg["proposal_call_id"] = self.researchers_outputs_agg[
+            "researcher"
+        ].map(self.researchers_merged.set_index("researcher")["proposal_call_id"].to_dict())
+
+        # assign for every nan proposal call id the value "not_eic"
+        self.researchers_outputs_agg["proposal_call_id"] = self.researchers_outputs_agg[
+            "proposal_call_id"
+        ].fillna("NOT_EIC")
+
+        self.researchers_outputs_agg.loc[
+            (self.researchers_outputs_agg["proposal_call_id"] != "NOT_EIC")
+            & (self.researchers_outputs_agg["status"] == "NOT_EIC"),
+            "status",
+        ] = "NO_DATA"
 
         # create counts of publications
         self.researchers_outputs_agg["publications_count"] = (

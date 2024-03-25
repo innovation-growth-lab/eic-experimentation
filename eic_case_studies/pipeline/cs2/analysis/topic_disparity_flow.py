@@ -117,6 +117,10 @@ class TopicSimilarityFlow(FlowSpec):
                 mean_dissimilarities, columns=self.topic_embeddings_df.index
             ).set_index(self.topic_embeddings_df.index)
 
+        # rescale diversity values to be between 0 and 1
+        self.disparity_df = (
+            self.disparity_df - self.disparity_df.min().min()
+        ) / self.disparity_df.max().max()
         self.next(self.save_results)
 
     @step

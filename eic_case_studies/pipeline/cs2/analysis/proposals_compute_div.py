@@ -81,6 +81,13 @@ class ProposalsDiversityFlow(FlowSpec):
             index=self.proposals_gb.index,
         )
 
+        # compute div from the three components
+        self.proposals_gb["div"] = (
+            self.proposals_gb["variety"]
+            * self.proposals_gb["balance"]
+            * self.proposals_gb["average_disparity"]
+        )
+
         self.proposals_gb[
             ["average_disparity_matched", "variety_matched", "balance_matched"]
         ] = pd.DataFrame(
@@ -94,6 +101,13 @@ class ProposalsDiversityFlow(FlowSpec):
             index=self.proposals_gb.index,
         )
 
+        # compute div from the three components
+        self.proposals_gb["div_matched"] = (
+            self.proposals_gb["variety_matched"]
+            * self.proposals_gb["balance_matched"]
+            * self.proposals_gb["average_disparity_matched"]
+        )
+
         self.proposals_gb[
             ["average_disparity_joined", "variety_joined", "balance_joined"]
         ] = pd.DataFrame(
@@ -105,6 +119,13 @@ class ProposalsDiversityFlow(FlowSpec):
             )
             .tolist(),
             index=self.proposals_gb.index,
+        )
+
+        # compute div from the three components
+        self.proposals_gb["div_joined"] = (
+            self.proposals_gb["variety_joined"]
+            * self.proposals_gb["balance_joined"]
+            * self.proposals_gb["average_disparity_joined"]
         )
 
         self.next(self.save_data)
