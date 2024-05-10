@@ -108,17 +108,13 @@ class SyntheticDataGenerator(FlowSpec):
             self.df_real = []
             for file in files:
                 print(f"Loading {file} ...")
-                self.df_real.append(
-                    [file, (s3dm.load_s3_data(file)).sample(5)]
-                )  # [HACK]
+                self.df_real.append([file, s3dm.load_s3_data(file)])
         else:
             # load these
             self.df_real = []
             for file in self.files_to_load:
                 print(f"Loading {file} ...")
-                self.df_real.append(
-                    [file, (s3dm.load_s3_data(file)).sample(5)]
-                )  # [HACK]
+                self.df_real.append([file, s3dm.load_s3_data(file)])
 
         self.next(self.data_processing, foreach="df_real")
 
