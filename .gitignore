@@ -12,3 +12,4 @@ eic_case_studies/notebooks/exploration.ipynb
 *.error_out
 .metaflow
 **/base/
+.envrc
