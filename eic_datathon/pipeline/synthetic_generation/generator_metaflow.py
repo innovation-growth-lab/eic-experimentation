@@ -23,7 +23,8 @@ import ast
 import random
 import numpy as np
 import pandas as pd
-from metaflow import FlowSpec, step, Parameter, pypi_base
+from joblib import Parallel, delayed
+from metaflow import FlowSpec, step, Parameter, pypi, pypi_base
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -201,6 +202,13 @@ class SyntheticDataGenerator(FlowSpec):
 
         tokenizer = T5Tokenizer.from_pretrained("t5-small")
         model = T5ForConditionalGeneration.from_pretrained("t5-small")
+
+        def _process_abstract(abstract):
+            anonymised_abstract = re.sub(r"\b[A-Z]\w*\b", "ENTITY", str(abstract))
+            inputs = tokenizer.encode("paraphrase: " + anonymised_abstract, return_tensors="pt")
+            outputs = model.generate(inputs, max_length=50, num_return_sequences=1, temperature=1.5)
+            paraphrase = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            return abstract, paraphrase
         print(
             self.file,
             "- Abstract Input Creation - Initialising",
@@ -213,24 +221,29 @@ class SyntheticDataGenerator(FlowSpec):
         if abstract_column:
             unique_projects = self.dataframe[[abstract_column]].drop_duplicates()
 
-        self.outputs = []
-        for i, abstract in enumerate(unique_projects[abstract_column]):
-            print(
-                self.file,
-                "- Abstract Input Creation -",
-                f"Processing {i+1} of {len(unique_projects)}",
-            )
-            anonymised_abstract = re.sub(r"\b[A-Z]\w*\b", "ENTITY", str(abstract))
-            inputs = tokenizer.encode(
-                "paraphrase: " + anonymised_abstract, return_tensors="pt"
-            )
-            outputs = model.generate(
-                inputs, max_length=50, num_return_sequences=1, temperature=1.5
-            )
+        # self.outputs = []
+        # for i, abstract in enumerate(unique_projects[abstract_column]):
+        #     print(
+        #         self.file,
+        #         "- Abstract Input Creation -",
+        #         f"Processing {i+1} of {len(unique_projects)}",
+        #     )
+        #     anonymised_abstract = re.sub(r"\b[A-Z]\w*\b", "ENTITY", str(abstract))
+        #     inputs = tokenizer.encode(
+        #         "paraphrase: " + anonymised_abstract, return_tensors="pt"
+        #     )
+        #     outputs = model.generate(
+        #         inputs, max_length=50, num_return_sequences=1, temperature=1.5
+        #     )
 
-            # decode the output tensor
-            paraphrase = tokenizer.decode(outputs[0], skip_special_tokens=True)
-            self.outputs.append((abstract, paraphrase))
+        #     # decode the output tensor
+        #     paraphrase = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        #     self.outputs.append((abstract, paraphrase))
+
+            # Parallel processing of abstracts
+        self.outputs = Parallel(n_jobs=8, verbose=10)(
+            delayed(_process_abstract)(abstract) for abstract in unique_projects[abstract_column]
+        )
 
         # now 'outputs' is a list of the generated text for each abstract
         self.next(self.get_synthetic_projects)
@@ -294,26 +307,29 @@ class SyntheticDataGenerator(FlowSpec):
         - input: {sentence}
         - output:
         """
-        prompt = ChatPromptTemplate.from_template(template)
-        model = ChatOpenAI()
 
-        chain = {"sentence": RunnablePassthrough()} | prompt | model | StrOutputParser()
 
-        output = {}
-        for i, (abstract, paraphrase) in enumerate(self.outputs):
-            print(
-                self.file,
-                "- Abstract Generation -",
-                f"Processing {i+1} of {len(self.outputs)}",
-            )
-            while True:
-                try:
-                    result = chain.invoke(paraphrase)
-                    json_result = ast.literal_eval(result)
-                    output[abstract] = json_result
-                    break
-                except (ValueError, KeyError, SyntaxError):
-                    continue
+        # output = {}
+        # for i, (abstract, paraphrase) in enumerate(self.outputs):
+        #     print(
+        #         self.file,
+        #         "- Abstract Generation -",
+        #         f"Processing {i+1} of {len(self.outputs)}",
+        #     )
+        #     while True:
+        #         try:
+        #             result = chain.invoke(paraphrase)
+        #             json_result = ast.literal_eval(result)
+        #             output[abstract] = json_result
+        #             break
+        #         except Exception:
+        #             continue
+
+        results = Parallel(n_jobs=8, verbose=10)(
+            delayed(self._process_item)(abstract, paraphrase, template) for abstract, paraphrase in self.outputs
+        )
+
+        output = {abstract: json_result for abstract, json_result in results}
 
         # iterate over the DataFrame rows
         for i, row in self.dataframe.iterrows():
@@ -437,7 +453,7 @@ class SyntheticDataGenerator(FlowSpec):
             self.dataframe[col] = self.dataframe[col].map(output_names)
         if address_cols:
             for col in address_cols:
-                self.dataframe[col] = self.dataframe[col].map(output_addresses)
+                self.dataframe[col] = self.dataframe[col].apply(lambda x: output_addresses.get(x, ""))
 
         self.next(self.zip_randomiser)
 
@@ -567,7 +583,6 @@ class SyntheticDataGenerator(FlowSpec):
 
     @step
     def join(self, inputs):
-        self.results = inputs
         self.next(self.end)
 
     @step
@@ -604,6 +619,40 @@ class SyntheticDataGenerator(FlowSpec):
             input_string = input_string.replace(sequence, new_sequence, 1)
 
         return input_string
+    
+    @staticmethod
+    def _process_item(abstract, paraphrase, template):
+
+        prompt = ChatPromptTemplate.from_template(template)
+        model = ChatOpenAI()
+
+        chain = {"sentence": RunnablePassthrough()} | prompt | model | StrOutputParser()
+        while True:
+            try:
+                result = chain.invoke(paraphrase)
+                json_result = ast.literal_eval(result)
+                return abstract, json_result
+            except Exception:
+                continue
+    @staticmethod
+    def _process_input(prompt_input, template):
+
+        prompt = ChatPromptTemplate.from_template(template)
+        model = ChatOpenAI()
+
+        chain = (
+            {"prompt_input": RunnablePassthrough()} | prompt | model | StrOutputParser()
+        )
+        while True:
+            try:
+                result = chain.invoke(prompt_input)
+                json_result = ast.literal_eval(result)
+                name = json_result.get("name", "")
+                address = json_result.get("address", "") if len(prompt_input) > 1 else ""
+                return prompt_input, name, address
+            except Exception:
+                continue
+
 
 
 if __name__ == "__main__":

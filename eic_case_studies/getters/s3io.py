@@ -56,6 +56,13 @@ class S3DataManager:
             csv_buffer.seek(0)
             # Upload the buffer content to S3
             obj.put(Body=csv_buffer.getvalue())
+        elif fnmatch(output_file_dir, "*.xlsx"):
+            excel_buffer = io.BytesIO()
+            output_var.to_excel(excel_buffer, index=False)
+            # Move to the beginning of the buffer
+            excel_buffer.seek(0)
+            # Upload the buffer content to S3
+            obj.put(Body=excel_buffer.getvalue())
         elif fnmatch(output_file_dir, "*.parquet"):
             output_var.to_parquet(f"s3://{self.bucket_name}/{output_file_dir}", index=False)
         elif fnmatch(output_file_dir, "*.pkl") or fnmatch(output_file_dir, "*.pickle"):
