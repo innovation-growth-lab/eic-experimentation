@@ -1,0 +1,29 @@
+[build-system]
+requires = [ "setuptools",]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eic_datathon_kedro"
+readme = "README.md"
+dynamic = [ "dependencies", "version",]
+
+[project.scripts]
+eic-datathon-kedro = "eic_datathon_kedro.__main__:main"
+
+[tool.kedro]
+package_name = "eic_datathon_kedro"
+project_name = "eic_datathon_kedro"
+kedro_init_version = "0.19.1"
+tools = "['Custom Logging']"
+
+[project.entry-points."kedro.hooks"]
+
+[tool.setuptools.dynamic.dependencies]
+file = "requirements.txt"
+
+[tool.setuptools.dynamic.version]
+attr = "eic_datathon_kedro.__version__"
+
+[tool.setuptools.packages.find]
+where = [ "src",]
+namespaces = false
